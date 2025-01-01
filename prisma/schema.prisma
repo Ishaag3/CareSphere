@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  username     String      @unique
+  email        String      @unique
+  passwordHash String
+  phoneNumber  String?
+  createdAt    DateTime    @default(now())
+  healthRecords HealthRecord[]
+  appointments Appointment[]
+  symptomChecks Symptom[]
+  hospitalCaches HospitalCache[]
+}
+
+model HealthRecord {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recordType  String   // e.g., "Medical History", "Prescription"
+  description String?
+  recordDate  DateTime
+  fileUrl     String?  // URL to stored health records (if applicable)
+  createdAt   DateTime @default(now())
+}
+
+model Hospital {
+  id        Int       @id @default(autoincrement())
+  name      String
+  address   String
+  phoneNumber String?
+  latitude  Float
+  longitude Float
+  createdAt DateTime  @default(now())
+  appointments Appointment[]
+}
+
+model Appointment {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hospitalId      Int
+  hospital        Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  appointmentDate DateTime
+  status          String    @default("Scheduled") // e.g., "Scheduled", "Completed", "Cancelled"
+  createdAt       DateTime  @default(now())
+}
+
+model HospitalCache {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  latitude    Float
+  longitude   Float
+  hospitals   Json      // Cached hospital data as JSON
+  cachedAt    DateTime  @default(now())
+}
+
+model Symptom {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symptom     String
+  diagnosis   String?
+  checkedAt   DateTime  @default(now())
+}
